@@ -38,8 +38,6 @@ class Mining(object):
             print('target difficulty :', target_diff)
 
             candidate_block = get_candidateblock()
-            #print(candidate_block.block_index, candidate_block.block_hash, candidate_block.previous_block, candidate_block.merkle_root,
-            #      candidate_block.difficulty)
 
             blockData = str(candidate_block.previous_block) + \
                         str(candidate_block.merkle_root) + \
@@ -96,6 +94,23 @@ class Mining(object):
                         print("False")
 
             # Add to UTXOsets and myUTXOsets(for coinbase transaction only)
+
+            tx_length=candidate_block.tx_set.length()
+            for i in range(tx_length):
+                tx=candidate_block.tx_set[i]
+                tx_id=tx.tx_id
+
+                for j in range(tx.in_num):
+                    vin=tx.vin[j]
+                    UTXOset.Pop_UTXO(vin.tx_id, vin.index)
+                    UTXOset.Pop_myUTXO(vin.tx_id, vin.index)
+                for j in range(tx.out_num):
+                    vout=tx.vout[j]
+                    UTXOset.Insert_UTXO(tx_id, j, vout.lock, vout.value)
+                    address_str=base64.b64encode(vout.lock).decode('utf-8')
+                    if address_str==Key._publicKey:
+                        UTXOset.Insert_myUTXO(tx_id,j,vout.lock,vout.value)
+            """
             coinbase = candidate_block.tx_set[0]
             coinbase_data = coinbase.vout[0]
             coinbase_tx_id = coinbase.tx_id
@@ -109,6 +124,7 @@ class Mining(object):
                                   0,
                                   coinbase_data.lock,
                                   coinbase_data.value)
+            """
 
             # Delete from MemoryPool
             for tx in candidate_block.tx_set:
